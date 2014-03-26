@@ -49,8 +49,12 @@
     <Compile Include="ChannelStateChangedEventArgs.cs" />
     <Compile Include="ClientSocketSlim.cs" />
     <Compile Include="Client\ClientConnector.cs" />
+    <Compile Include="Client\ExceptionEventArgs.cs" />
+    <Compile Include="Client\SocketEventArgs.cs" />
+    <Compile Include="Client\TaskClientConnector.cs" />
     <Compile Include="IClientSocketSlim.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SocketErrorException.cs" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
