@@ -78,19 +78,17 @@ namespace SocketSlim.ChannelWrapper
 
         private bool StartReceive()
         {
-            bool callbackPending = false, socketClosed = false;
+            bool callbackPending;
             try
             {
                 callbackPending = socket.ReceiveAsync(receiver);
             }
-            catch (Exception) { socketClosed = true; }
-            
-            if (socketClosed)
+            catch (Exception ex)
             {
-                CloseSocket(isReceiver: true); // finish execution
+                CloseSocket(isReceiver: true, exception: ex);
                 return false;
             }
-
+            
             if (!callbackPending)
             {
                 return ProcessReceive();
@@ -106,25 +104,27 @@ namespace SocketSlim.ChannelWrapper
 
         private bool ProcessReceive()
         {
-            bool socketClosed = false;
             try
             {
                 if (receiver.SocketError != SocketError.Success || receiver.BytesTransferred == 0)
                 {
-                    CloseSocket(isReceiver: true);
+                    if (receiver.SocketError != SocketError.Success)
+                    {
+                        CloseSocket(isReceiver: true, error: receiver.SocketError);
+                    }
+                    else
+                    {
+                        CloseSocketNormally(isReceiver: true);
+                    }
+                    
                     return false;
                 }
 
                 RaiseBytesReceived();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                socketClosed = true;
-            }
-
-            if (socketClosed)
-            {
-                CloseSocket(isReceiver: true);
+                CloseSocket(isReceiver: true, exception: ex);
                 return false;
             }
 
@@ -155,6 +155,11 @@ namespace SocketSlim.ChannelWrapper
             }
         }
 
+        /// <summary>
+        /// Sends a pack of bytes through the socket.
+        /// 
+        /// DO NOT ever reuse one array to send bytes here.
+        /// </summary>
         public void Send(byte[] msg)
         {
             if (msg == null) throw new ArgumentNullException("msg");
@@ -279,19 +284,14 @@ namespace SocketSlim.ChannelWrapper
 
         private void StartAsyncSend()
         {
-            bool callbackPending = false, socketClosed = false;
+            bool callbackPending;
             try
             {
                 callbackPending = socket.SendAsync(sender);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                socketClosed = true;
-            }
-
-            if (socketClosed)
-            {
-                CloseSocket(isReceiver: false);
+                CloseSocket(isReceiver: false, exception: ex);
                 return;
             }
 
@@ -308,25 +308,20 @@ namespace SocketSlim.ChannelWrapper
 
         private void ProcessSent()
         {
-            bool socketClosed = false;
             try
             {
                 if (sender.SocketError != SocketError.Success)
                 {
-                    CloseSocket(isReceiver: false);
+                    CloseSocket(isReceiver: false, error: sender.SocketError);
                     return;
                 }
 
                 StartSend();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                socketClosed = true;
-            }
-
-            if (socketClosed)
-            {
-                CloseSocket(isReceiver: false);
+                CloseSocket(isReceiver: false, exception: ex);
+                return;
             }
         }
 
@@ -355,7 +350,22 @@ namespace SocketSlim.ChannelWrapper
             catch (NullReferenceException) { }
         }
 
-        private void CloseSocket(bool isReceiver)
+        private void CloseSocketNormally(bool isReceiver)
+        {
+            CloseSocket(isReceiver, null, null);
+        }
+
+        private void CloseSocket(bool isReceiver, SocketError error)
+        {
+            CloseSocket(isReceiver, error, null);
+        }
+
+        private void CloseSocket(bool isReceiver, Exception exception)
+        {
+            CloseSocket(isReceiver, null, exception);
+        }
+
+        private void CloseSocket(bool isReceiver, SocketError? error, Exception exception)
         {
             bool freeSend = false;
             if (!isReceiver)
@@ -371,6 +381,8 @@ namespace SocketSlim.ChannelWrapper
             }
 
             bool freeReceive = isReceiver && (Interlocked.Increment(ref freeReceiveCounter) == 1);
+
+            RaiseDuplexChannelClosed(isReceiver ? DuplexSide.Receive : DuplexSide.Send, error, exception);
 
             if (!freeSend && !freeReceive)
             {
@@ -393,7 +405,7 @@ namespace SocketSlim.ChannelWrapper
         }
 
         /// <summary>
-        /// Event is fired when the socket is closed.
+        /// Event is fired when the socket is fully closed.
         /// </summary>
         public event EventHandler Closed;
 
@@ -403,6 +415,25 @@ namespace SocketSlim.ChannelWrapper
             if (handler != null)
             {
                 handler(this, EventArgs.Empty);
+            }
+        }
+
+        /// <summary>
+        /// Event is fired when one of the duplex channels closes.
+        /// This event provides the detailed information about the reason the channel was closed.
+        /// 
+        /// We can't provide this info in the <see cref="Closed"/> event, because full closure is always
+        /// signaled by the close of the receive channel, but the true cause of the channel closing may be
+        /// the failure at the send channel.
+        /// </summary>
+        public event EventHandler<ChannelCloseEventArgs> DuplexChannelClosed;
+
+        public void RaiseDuplexChannelClosed(DuplexSide duplexSide, SocketError? socketError, Exception exception)
+        {
+            EventHandler<ChannelCloseEventArgs> handler = DuplexChannelClosed;
+            if (handler != null)
+            {
+                handler(this, new ChannelCloseEventArgs(duplexSide, socketError, exception));
             }
         }
 

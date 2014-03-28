@@ -3,6 +3,8 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SocketSlim", "SocketSlim\SocketSlim.csproj", "{136B2B39-3C6C-475C-9B4B-26F72594FBC1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SocketSlim.Tests", "SocketSlim.Tests\SocketSlim.Tests.csproj", "{CCFB16C4-DA77-4B63-B2BE-3402A9EF33A9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -13,6 +15,10 @@ Global
 		{136B2B39-3C6C-475C-9B4B-26F72594FBC1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{136B2B39-3C6C-475C-9B4B-26F72594FBC1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{136B2B39-3C6C-475C-9B4B-26F72594FBC1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CCFB16C4-DA77-4B63-B2BE-3402A9EF33A9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CCFB16C4-DA77-4B63-B2BE-3402A9EF33A9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CCFB16C4-DA77-4B63-B2BE-3402A9EF33A9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CCFB16C4-DA77-4B63-B2BE-3402A9EF33A9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

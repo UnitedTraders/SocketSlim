@@ -11,7 +11,7 @@ namespace SocketSlim.Client
             this.exception = exception;
         }
 
-        public Exception Exception1
+        public Exception Exception
         {
             get { return exception; }
         }

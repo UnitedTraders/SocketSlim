@@ -13,7 +13,7 @@ namespace SocketSlim
             this.socketError = socketError;
         }
 
-        public SocketError SocketError1
+        public SocketError SocketError
         {
             get { return socketError; }
         }

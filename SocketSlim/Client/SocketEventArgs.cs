@@ -12,7 +12,7 @@ namespace SocketSlim.Client
             this.socket = socket;
         }
 
-        public Socket Socket1
+        public Socket Socket
         {
             get { return socket; }
         }

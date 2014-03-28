@@ -41,18 +41,26 @@ namespace SocketSlim.Client
 
         protected override void RaiseConnected(Socket s)
         {
-            taskCompletionSource.TrySetResult(s);
-            taskCompletionSource = null;
-
             base.RaiseConnected(s);
+
+            TaskCompletionSource<Socket> tcs = taskCompletionSource;
+            if (tcs != null)
+            {
+                taskCompletionSource.TrySetResult(s);
+                taskCompletionSource = null;
+            }
         }
 
         protected override void RaiseFailed(Exception e)
         {
-            taskCompletionSource.TrySetException(e);
-            taskCompletionSource = null;
-
             base.RaiseFailed(e);
+
+            TaskCompletionSource<Socket> tcs = taskCompletionSource;
+            if (tcs != null)
+            {
+                taskCompletionSource.TrySetException(e);
+                taskCompletionSource = null;
+            }
         }
     }
 }
