@@ -1,51 +1,61 @@
-﻿using System;
+using System;
+using SocketSlim.Client;
 
 namespace SocketSlim
 {
     public interface IClientSocketSlim
     {
-        // TODO: OPEN AND CLOSE WHICH RETURN TASKS!!!
-
-        string Host { get; set; }
-        int Port { get; set; }
-
+        /// <summary>
+        /// Gets the current state of the socket.
+        /// </summary>
         ChannelState State { get; }
-        event EventHandler<ChannelStateChangedEventArgs> StateChanged;
+
+        /// <summary>
+        /// Gets or sets the hostname to which the socket is/will be connecting.
+        /// </summary>
+        string Host { get; set; }
+
+        /// <summary>
+        /// Gets or sets the port to which the socket is/will be connecting.
+        /// </summary>
+        int Port { get; set; }
 
         /// <summary>
         /// Starts connecting to the specified <see cref="Host"/> and <see cref="Port"/>.
         /// 
-        /// Throws exception if already connected or connecting, check the <see cref="State"/>.
+        /// It's an asynchronous operation, you should start sending data only
+        /// after you receive <see cref="StateChanged"/> event with the <see cref="ChannelState.Connected"/>.
+        /// 
+        /// If anything fails while connecting, you will receive <see cref="StateChanged"/> event with the <see cref="ChannelState.Disconnected"/>.
         /// </summary>
         void Open();
-        
+
         /// <summary>
-        /// Closes the current connection. If we're connecting, interrupts the connection process.
+        /// Either stops connecting, or closes an already established connection.
         /// 
-        /// Throws exception if we're disconnected.
+        /// It's an asynchronous operation, you should start connecting again only
+        /// after you receive <see cref="StateChanged"/> event with the <see cref="ChannelState.Disconnected"/>.
         /// </summary>
         void Close();
 
         /// <summary>
-        /// Sends the array of bytes into the socket. Can be called from multiple threads simultaneously.
+        /// Sends specified <see cref="bytes"/> into the socket. This method is thread safe and uses FIFO queue.
         /// </summary>
-        void Send(byte[] msg);
+        void Send(byte[] bytes);
 
-        event EventHandler<BytesReceivedEventArgs> BytesReceived;
-    }
+        /// <summary>
+        /// Raised when socket changes state. Use this event to monitor when socket is ready, or aborted the connection.
+        /// </summary>
+        event EventHandler<ChannelStateChangedEventArgs> StateChanged;
 
-    public class BytesReceivedEventArgs : EventArgs
-    {
-        private readonly byte[] bytes;
+        /// <summary>
+        /// Raised when socket receives some bytes.
+        /// </summary>
+        event ClientSocketMessageHandler BytesReceived;
 
-        public BytesReceivedEventArgs(byte[] bytes)
-        {
-            this.bytes = bytes;
-        }
-
-        public byte[] Bytes
-        {
-            get { return bytes; }
-        }
+        /// <summary>
+        /// Raised when any error occurs, whether it was during the connection or sending/receiving data.
+        /// </summary>
+        event EventHandler<ExceptionEventArgs> Error;
     }
 }
