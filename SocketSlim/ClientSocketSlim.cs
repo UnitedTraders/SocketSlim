@@ -9,6 +9,9 @@ using SocketSlim.Client;
 
 namespace SocketSlim
 {
+    /// <summary>
+    /// Socket which returns <see cref="ISocketChannel"/> on successful connection.
+    /// </summary>
     public class ClientSocketSlim : IClientSocketSlim
     {
         private const int DefaultBufferSize = 8192;
@@ -29,7 +32,6 @@ namespace SocketSlim
         private SocketAsyncEventArgs sender;
         private DirectBytesReceivedEventArgs receiverArgs;
         private MemoryStream senderWriter;
-        private ChannelWrapperBase wrapper;
 
         private int state;
 
@@ -65,42 +67,24 @@ namespace SocketSlim
         {
             AllocateCommunicationResources();
 
-            wrapper = new ChannelWrapperBase(e.Socket, receiver, receiverArgs, sender, senderWriter);
-            wrapper.BytesReceived += OnBytesReceived;
-            wrapper.Closed += OnChannelClosed;
-            wrapper.DuplexChannelClosed += OnChannelError;
+            ISocketChannel channel = new ImmutableChannel(e.Socket, receiver, sender, receiverArgs, senderWriter);
+            channel.Closed += OnChannelClosed;
+            channel.Error += OnChannelError;
+
+            RaiseConnected(channel);
+            ChangeState(ChannelState.Connected);
+
+            channel.Start();
         }
 
-        protected virtual void OnChannelError(object o, ChannelCloseEventArgs e)
+        private void OnChannelError(object o, ExceptionEventArgs e)
         {
-            if (e.Exception != null)
-            {
-                RaiseError(e.Exception);
-            }
-            else if (e.SocketError != null)
-            {
-                RaiseError(new SocketErrorException(e.SocketError.Value));
-            }
-
-            // when both are null, the socket is closed normally
+            RaiseError(e);
         }
 
         protected virtual void OnChannelClosed(object o, EventArgs e)
         {
-            wrapper = null;
-
             ChangeState(ChannelState.Disconnected);
-        }
-
-        protected virtual void OnBytesReceived(object o, BytesReceivedEventArgs e)
-        {
-            byte[] msg = new byte[e.Size];
-
-            Buffer.BlockCopy(e.Buffer, e.Offset, msg, 0, e.Size);
-            
-            RaiseBytesReceived(msg);
-
-            e.Proceed();
         }
 
         protected virtual void OnConnectFailed(object o, ExceptionEventArgs e)
@@ -164,7 +148,7 @@ namespace SocketSlim
             }
         }
 
-        public void Open()
+        public void Start()
         {
             if (state != (int) ChannelState.Disconnected)
             {
@@ -188,36 +172,24 @@ namespace SocketSlim
             }
         }
 
-        public void Close()
+        public virtual void Stop()
         {
             ChangeState(ChannelState.Disconnecting);
 
-            if (wrapper != null)
+            if (!connector.StopConnecting())
             {
-                wrapper.Close();
+                ChangeState(ChannelState.Disconnected);
             }
-            else
-            {
-                if (!connector.StopConnecting())
-                {
-                    ChangeState(ChannelState.Disconnected);
-                }
-            }
-        }
-
-        public void Send(byte[] bytes)
-        {
-            if (state != (int) ChannelState.Connected || wrapper == null)
-            {
-                throw new InvalidOperationException("Can't send data when the socket is not open");
-            }
-
-            wrapper.Send(bytes);
         }
 
         protected void ChangeState(ChannelState newState)
         {
             ChannelState oldState = (ChannelState)Interlocked.Exchange(ref state, (int)newState);
+
+            if (oldState == newState)
+            {
+                return;
+            }
 
             RaiseStateChanged(new ChannelStateChangedEventArgs(oldState, newState));
         }
@@ -233,23 +205,7 @@ namespace SocketSlim
             }
         }
 
-        public event ClientSocketMessageHandler BytesReceived;
-
-        protected void RaiseBytesReceived(byte[] message)
-        {
-            ClientSocketMessageHandler handler = BytesReceived;
-            if (handler != null)
-            {
-                handler(this, message);
-            }
-        }
-
         public event EventHandler<ExceptionEventArgs> Error;
-
-        protected void RaiseError(Exception e)
-        {
-            RaiseError(new ExceptionEventArgs(e));
-        }
 
         protected void RaiseError(ExceptionEventArgs e)
         {
@@ -257,6 +213,17 @@ namespace SocketSlim
             if (handler != null)
             {
                 handler(this, e);
+            }
+        }
+
+        public event EventHandler<ChannelEventArgs> Connected;
+
+        protected virtual void RaiseConnected(ISocketChannel channel)
+        {
+            EventHandler<ChannelEventArgs> handler = Connected;
+            if (handler != null)
+            {
+                handler(this, new ChannelEventArgs(channel));
             }
         }
     }

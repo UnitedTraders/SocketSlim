@@ -1,4 +1,5 @@
 using System;
+using SocketSlim.ChannelWrapper;
 using SocketSlim.Client;
 
 namespace SocketSlim
@@ -28,20 +29,17 @@ namespace SocketSlim
         /// 
         /// If anything fails while connecting, you will receive <see cref="StateChanged"/> event with the <see cref="ChannelState.Disconnected"/>.
         /// </summary>
-        void Open();
+        void Start();
 
         /// <summary>
-        /// Either stops connecting, or closes an already established connection.
+        /// Stops connecting.
         /// 
         /// It's an asynchronous operation, you should start connecting again only
         /// after you receive <see cref="StateChanged"/> event with the <see cref="ChannelState.Disconnected"/>.
+        /// 
+        /// To close the opened connection, use <see cref="ISocketChannel.Close"/> method on the object you've got through <see cref="Connected"/> event.
         /// </summary>
-        void Close();
-
-        /// <summary>
-        /// Sends specified <see cref="bytes"/> into the socket. This method is thread safe and uses FIFO queue.
-        /// </summary>
-        void Send(byte[] bytes);
+        void Stop();
 
         /// <summary>
         /// Raised when socket changes state. Use this event to monitor when socket is ready, or aborted the connection.
@@ -49,13 +47,13 @@ namespace SocketSlim
         event EventHandler<ChannelStateChangedEventArgs> StateChanged;
 
         /// <summary>
-        /// Raised when socket receives some bytes.
-        /// </summary>
-        event ClientSocketMessageHandler BytesReceived;
-
-        /// <summary>
         /// Raised when any error occurs, whether it was during the connection or sending/receiving data.
         /// </summary>
         event EventHandler<ExceptionEventArgs> Error;
+
+        /// <summary>
+        /// Raised when the socket is closed successfully. Contains the object that should be used to send and receive data.
+        /// </summary>
+        event EventHandler<ChannelEventArgs> Connected;
     }
 }

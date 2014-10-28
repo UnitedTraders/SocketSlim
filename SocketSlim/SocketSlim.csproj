@@ -36,21 +36,32 @@
   <ItemGroup>
     <Compile Include="ChannelWrapper\BytesReceivedEventArgs.cs" />
     <Compile Include="ChannelWrapper\ChannelCloseEventArgs.cs" />
+    <Compile Include="ChannelWrapper\ChannelEventArgs.cs" />
     <Compile Include="ChannelWrapper\ChannelWrapperBase.cs" />
     <Compile Include="ChannelWrapper\DirectBytesReceivedEventArgs.cs" />
     <Compile Include="ChannelWrapper\DuplexSide.cs" />
+    <Compile Include="ChannelWrapper\ImmutableChannel.cs" />
+    <Compile Include="ChannelWrapper\ISocketChannel.cs" />
     <Compile Include="ChannelWrapper\ProceedReceiveEventArgs.cs" />
     <Compile Include="ChannelState.cs" />
     <Compile Include="ChannelStateChangedEventArgs.cs" />
     <Compile Include="ClientSocketSlim.cs" />
+    <Compile Include="ClientSocketSlimEx.cs" />
     <Compile Include="Client\ClientConnector.cs" />
     <Compile Include="Client\ExceptionEventArgs.cs" />
     <Compile Include="Client\SocketEventArgs.cs" />
     <Compile Include="Client\TaskClientConnector.cs" />
+    <Compile Include="IClientSocketSlimEx.cs" />
     <Compile Include="IClientSocketSlim.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Server\IMaxConnectionsEnforcer.cs" />
+    <Compile Include="Server\ISocketAsyncEventArgsPool.cs" />
+    <Compile Include="Server\MaxConnectionsEnforcer.cs" />
+    <Compile Include="Server\NoMaxConnectionEnforcer.cs" />
+    <Compile Include="Server\QueueSocketAsyncEventArgsPool.cs" />
+    <Compile Include="Server\ServerAcceptor.cs" />
     <Compile Include="SocketErrorException.cs" />
-    <Compile Include="ClientSocketMessageHandler.cs" />
+    <Compile Include="ChannelMessageHandler.cs" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
