@@ -40,7 +40,10 @@
   <ItemGroup>
     <Compile Include="ChannelWrapperTests.cs" />
     <Compile Include="ClientConnectorTests.cs" />
+    <Compile Include="ClientConnectorTestsBase.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ServerAcceptorTests.cs" />
+    <Compile Include="ServerAcceptorTestsBase.cs" />
     <Compile Include="TaskClientConnectorTests.cs" />
     <Compile Include="TestsBase.cs" />
   </ItemGroup>

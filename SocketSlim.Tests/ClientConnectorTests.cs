@@ -6,7 +6,7 @@ using Xunit;
 
 namespace SocketSlim.Tests
 {
-    public class ClientConnectorTests : TestsBase
+    public class ClientConnectorTests : ClientConnectorTestsBase
     {
         public ClientConnectorTests() : this(null)
         { }
@@ -44,7 +44,7 @@ namespace SocketSlim.Tests
 
             WaitForConnections(1);
 
-            byte[] data = new byte[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+            byte[] data = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
 
             Socket opened = OpenedConnections[0];
             opened.Send(data);

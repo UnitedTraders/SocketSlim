@@ -1,11 +1,13 @@
-﻿namespace SocketSlim.Server
+﻿using System.Threading.Tasks;
+
+namespace SocketSlim.Server
 {
     public interface IMaxConnectionsEnforcer
     {
         /// <summary>
-        /// Blocks until the connection is available.
+        /// Returns task which ends when the slot is available.
         /// </summary>
-        void TakeOne();
+        Task TakeOne();
 
         void ReleaseOne();
     }

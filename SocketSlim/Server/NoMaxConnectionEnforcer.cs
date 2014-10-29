@@ -1,8 +1,13 @@
-﻿namespace SocketSlim.Server
+﻿using System.Threading.Tasks;
+
+namespace SocketSlim.Server
 {
     public class NoMaxConnectionEnforcer : IMaxConnectionsEnforcer
     {
-        public void TakeOne() { }
+        public Task TakeOne()
+        {
+            return null;
+        }
 
         public void ReleaseOne() { }
     }

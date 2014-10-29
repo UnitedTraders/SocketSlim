@@ -16,16 +16,25 @@ namespace SocketSlim.ChannelWrapper
             this.exception = exception;
         }
 
+        /// <summary>
+        /// Gets the part of the duplex channel that has closed.
+        /// </summary>
         public DuplexSide DuplexSide
         {
             get { return duplexSide; }
         }
 
+        /// <summary>
+        /// Gets the exception which caused channel closure.
+        /// </summary>
         public Exception Exception
         {
             get { return exception; }
         }
 
+        /// <summary>
+        /// Gets the <see cref="SocketError"/> which caused channel closure.
+        /// </summary>
         public SocketError? SocketError
         {
             get { return socketError; }

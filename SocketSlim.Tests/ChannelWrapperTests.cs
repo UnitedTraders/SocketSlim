@@ -11,7 +11,7 @@ using System.Linq;
 
 namespace SocketSlim.Tests
 {
-    public class ChannelWrapperTests : TestsBase
+    public class ChannelWrapperTests : ClientConnectorTestsBase
     {
         private readonly ChannelWrapperBase wrapper;
         private readonly Socket otherEnd;

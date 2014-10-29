@@ -4,6 +4,10 @@ using System.Threading.Tasks;
 
 namespace SocketSlim.Client
 {
+    /// <summary>
+    /// Extended <see cref="ClientConnector"/> implemetation that allows getting a <see cref="Socket"/>
+    /// through <see cref="Task"/>.
+    /// </summary>
     public class TaskClientConnector : ClientConnector
     {
         private TaskCompletionSource<Socket> taskCompletionSource;
@@ -13,6 +17,9 @@ namespace SocketSlim.Client
         {
         }
 
+        /// <summary>
+        /// Initiates connection process and returns a task with the resulting connected socket.
+        /// </summary>
         public Task<Socket> ConnectAsync()
         {
             if (taskCompletionSource != null)

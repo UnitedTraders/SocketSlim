@@ -17,12 +17,25 @@ namespace SocketSlim.ChannelWrapper
     /// * Call <see cref="Start"/> method;
     /// * Handle incoming data through <see cref="BytesReceived"/> event handler and call <see cref="Send"/> to send data;
     /// * Optionally call <see cref="Close"/> method to close the connection.
-    /// * Once the <see cref="Closed"/> event is raised, the socket is closed;
+    /// * Once the <see cref="Closed"/> event is raised, the socket is closed and this object can't be reused,
+    ///   but the <see cref="SocketAsyncEventArgs"/> and buffers you passed to it can.
+    /// 
+    /// This class represents a low level building block for the socket. Feel free to use it in your own designs,
+    /// but avoid using it directly in the user code.
     /// </summary>
+    /// <remarks>
+    /// The constructor takes two <see cref="SocketAsyncEventArgs"/> objects which should be already set up with buffers.
+    /// This is done because allocating these on the fly is expensive and can be optimized by using a pool of preallocated
+    /// objects with buffers.
+    /// 
+    /// Also, because the buffer array set in <see cref="SocketAsyncEventArgs"/> becomes "pinned" i. e. can't be moved by
+    /// GC, allocating many small buffers creates memory fragmentation issue, so this object has to allow for different buffer
+    /// allocation techniques such as sharing one huge byte array across many <see cref="SocketAsyncEventArgs"/>.
+    /// </remarks>
     public class ChannelWrapperBase
     {
-        // todo: provide socket close reason when calling Closed event
-
+        // as this object is tied exclusively to one socket, we can store send/receive context data in here instead of
+        // passing it through SocketAsyncEventArgs
         private readonly Socket socket;
 
         private readonly SocketAsyncEventArgs receiver;
@@ -158,7 +171,7 @@ namespace SocketSlim.ChannelWrapper
         /// <summary>
         /// Sends a pack of bytes through the socket.
         /// 
-        /// DO NOT ever reuse one array to send bytes here.
+        /// Don't do anything with the byte array after you've passed it inside this method.
         /// </summary>
         public void Send(byte[] msg)
         {
@@ -175,7 +188,7 @@ namespace SocketSlim.ChannelWrapper
             {
                 outgoingQueue.Enqueue(msg);
 
-                if (!sending)
+                if (!sending) // check whether noone is sending data already, becuse then they'll pick up the message otherwise.
                 {
                     sending = true;
                     needStart = true;
@@ -198,10 +211,10 @@ namespace SocketSlim.ChannelWrapper
 
             sendBufferWriter.Seek(0, SeekOrigin.Begin);
 
+            // handle the remaining message from the previous sending
             if (currentMessage != null)
             {
-                // handle the remaining message from the previous sending
-                if (currentMessage.Length - currentMessageOffset > sendBufferWriter.Length)
+                if (currentMessage.Length - currentMessageOffset > sendBufferWriter.Length) // check if the message is too long for sending buffer
                 {
                     messages = new List<byte[]>();
                     
@@ -210,7 +223,7 @@ namespace SocketSlim.ChannelWrapper
                     
                     currentMessageOffset += bytesToSend;
 
-                    needQueue = false;
+                    needQueue = false; // previous message fills all of the sending buffer, no need to go to queue for additional data
                 }
                 else
                 {
@@ -238,7 +251,8 @@ namespace SocketSlim.ChannelWrapper
                         return;
                     }
 
-                    // fill in the send buffer
+                    // take some messages from queue to fill the sending buffer
+                    // we don't write them to send buffer here to reduce time spent inside lock
                     while (outgoingQueue.Count > 0)
                     {
                         byte[] message = outgoingQueue.Dequeue();
@@ -321,7 +335,6 @@ namespace SocketSlim.ChannelWrapper
             catch (Exception ex)
             {
                 CloseSocket(isReceiver: false, exception: ex);
-                return;
             }
         }
 
@@ -423,7 +436,7 @@ namespace SocketSlim.ChannelWrapper
         /// This event provides the detailed information about the reason the channel was closed.
         /// 
         /// We can't provide this info in the <see cref="Closed"/> event, because full closure is always
-        /// signaled by the close of the receive channel, but the true cause of the channel closing may be
+        /// signaled by the closure of the receive channel, but the true cause of the channel closing may be
         /// the failure at the send channel.
         /// </summary>
         public event EventHandler<ChannelCloseEventArgs> DuplexChannelClosed;

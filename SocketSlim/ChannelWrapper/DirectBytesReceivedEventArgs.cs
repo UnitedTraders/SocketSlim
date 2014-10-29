@@ -3,6 +3,11 @@ using System.Net.Sockets;
 
 namespace SocketSlim.ChannelWrapper
 {
+    /// <summary>
+    /// <see cref="BytesReceivedEventArgs"/> implementation that gives event handler a direct access to the receive buffer.
+    /// This makes calling receive events much more efficient, but places a burden on the event receiver to either read data
+    /// in place or copy it himself, but in the same time allows receiver implementation to skip unnecessary memory copying.
+    /// </summary>
     public class DirectBytesReceivedEventArgs : BytesReceivedEventArgs
     {
         private readonly SocketAsyncEventArgs receiver;

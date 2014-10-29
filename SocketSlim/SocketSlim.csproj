@@ -54,6 +54,7 @@
     <Compile Include="IClientSocketSlimEx.cs" />
     <Compile Include="IClientSocketSlim.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ServerSocketSlim.cs" />
     <Compile Include="Server\IMaxConnectionsEnforcer.cs" />
     <Compile Include="Server\ISocketAsyncEventArgsPool.cs" />
     <Compile Include="Server\MaxConnectionsEnforcer.cs" />
@@ -62,6 +63,7 @@
     <Compile Include="Server\ServerAcceptor.cs" />
     <Compile Include="SocketErrorException.cs" />
     <Compile Include="ChannelMessageHandler.cs" />
+    <Compile Include="Util\AsyncSemaphore.cs" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

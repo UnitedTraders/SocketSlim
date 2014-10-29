@@ -12,7 +12,8 @@ namespace SocketSlim.Tests
 {
     public abstract class TestsBase : IDisposable
     {
-        protected readonly ClientConnector Connector;
+        private static readonly TimeSpan WaitTime = TimeSpan.FromSeconds(2);
+
         protected static readonly IPAddress Addr = IPAddress.Parse("127.0.0.1");
         protected static readonly int Port = 32098;
 
@@ -21,34 +22,40 @@ namespace SocketSlim.Tests
 
         protected int ConnectionCount;
         protected readonly List<Socket> Connections = new List<Socket>();
+        protected readonly List<Exception> Exceptions = new List<Exception>();
         protected int BytesReceived;
+
+        protected readonly ConcurrentDictionary<Socket, MemoryStream> OtherEndData = new ConcurrentDictionary<Socket, MemoryStream>();
+
+        // client stuff
+        protected readonly Socket[] Clients;
 
         protected readonly List<Socket> OpenedConnections = new List<Socket>();
         protected readonly List<Exception> ConnectionErrors = new List<Exception>();
 
-        protected readonly ConcurrentDictionary<Socket, MemoryStream> OtherEndData = new ConcurrentDictionary<Socket, MemoryStream>();
-
-        protected TestsBase(ClientConnector connector = null)
+        protected TestsBase(bool dummyServer)
         {
-            // set up the connector
-            Connector = connector ?? new ClientConnector(SocketType.Stream, ProtocolType.Tcp, new SocketAsyncEventArgs())
-                                         {
-                                             Address = Addr,
-                                             Port = Port
-                                         };
-            Connector.Connected += OnConnected;
-            Connector.Failed += OnFailed;
+            if (dummyServer)
+            {
+                // set up server socket
+                server = new Socket(Addr.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                server.Bind(new IPEndPoint(Addr, Port));
 
-            // set up server socket
-            server = new Socket(Addr.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            server.Bind(new IPEndPoint(Addr, Port));
-
-            // start accepting connections
-            server.Listen(10);
-            server.BeginAccept(OnServerConnection, null);
+                // start accepting connections
+                server.Listen(10);
+                server.BeginAccept(OnServerConnection, null);
+            }
+            else
+            {
+                Clients = new Socket[10];
+                for (int i = 0; i < Clients.Length; i++)
+                {
+                    Clients[i] = new Socket(Addr.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                }
+            }
         }
 
-        private void OnConnected(object sender, SocketEventArgs e)
+        protected void OnConnected(object sender, SocketEventArgs e)
         {
             lock (OpenedConnections)
             {
@@ -58,7 +65,7 @@ namespace SocketSlim.Tests
             }
         }
 
-        private void OnFailed(object sender, ExceptionEventArgs e)
+        protected void OnFailed(object sender, ExceptionEventArgs e)
         {
             lock (ConnectionErrors)
             {
@@ -74,7 +81,7 @@ namespace SocketSlim.Tests
             {
                 while (OpenedConnections.Count < socketCount)
                 {
-                    if (!Monitor.Wait(OpenedConnections, TimeSpan.FromSeconds(2)))
+                    if (!Monitor.Wait(OpenedConnections, WaitTime))
                     {
                         throw new InvalidOperationException("Couldn't get " + socketCount + " opened connection(s)");
                     }
@@ -88,9 +95,37 @@ namespace SocketSlim.Tests
             {
                 while (ConnectionErrors.Count < errorCount)
                 {
-                    if (!Monitor.Wait(ConnectionErrors, TimeSpan.FromSeconds(2)))
+                    if (!Monitor.Wait(ConnectionErrors, WaitTime))
                     {
                         throw new InvalidOperationException("Couldn't get " + errorCount + " error(s) in time");
+                    }
+                }
+            }
+        }
+
+        protected void WaitForErrorsOnOtherSide(int errorCount)
+        {
+            lock (Exceptions)
+            {
+                while (Exceptions.Count < errorCount)
+                {
+                    if (!Monitor.Wait(Exceptions, WaitTime))
+                    {
+                        throw new InvalidOperationException("Couldn't get " + errorCount + " error(s) in time");
+                    }
+                }
+            }
+        }
+
+        protected void WaitForConnectionsOnOtherSide(int socketCount)
+        {
+            lock (Connections)
+            {
+                while (Connections.Count < socketCount)
+                {
+                    if (!Monitor.Wait(Connections, WaitTime))
+                    {
+                        throw new InvalidOperationException("Couldn't get " + socketCount + " opened connection(s)");
                     }
                 }
             }
@@ -122,7 +157,12 @@ namespace SocketSlim.Tests
         {
             // get client socket
             Socket client;
-            Connections.Add(client = server.EndAccept(ar));
+            lock (Connections)
+            {
+                Connections.Add(client = server.EndAccept(ar));
+
+                Monitor.PulseAll(Connections);
+            }
 
             Interlocked.Increment(ref ConnectionCount);
 
@@ -210,23 +250,85 @@ namespace SocketSlim.Tests
             throw new InvalidOperationException("Couldn't receive " + bytesCount + " bytes");
         }
 
-        public virtual void Dispose()
+        // dummy clients
+
+        protected void StartClientConnect(int index)
         {
+            Clients[index].BeginConnect(Addr, Port, OnClientConnected, index);
+        }
+
+        private void OnClientConnected(IAsyncResult ar)
+        {
+            int index = (int) ar.AsyncState;
+
+            // get client socket
+            Socket client;
+
             try
             {
-                server.Shutdown(SocketShutdown.Both);
-            }
-            catch (SocketException) { }
+                Clients[index].EndConnect(ar);
+                client = Clients[index];
 
-            server.Close();
+                lock (Connections)
+                {
+                    Connections.Add(client);
+
+                    Monitor.PulseAll(Connections);
+                }
+            }
+            catch (Exception e)
+            {
+                lock (Exceptions)
+                {
+                    Exceptions.Add(e);
+
+                    Monitor.PulseAll(Exceptions);
+                }
+                return;
+            }
+
+            Interlocked.Increment(ref ConnectionCount);
+
+            // start receiving data through it
+            byte[] buffer = new byte[19]; // we test connections, we can get by with smaller buffers
+            client.BeginReceive(buffer, 0, buffer.Length, SocketFlags.None, OnClientData, new SocketReceiveState(client, buffer));
+        }
+
+        public virtual void Dispose()
+        {
+            if (server != null)
+            {
+                try
+                {
+                    server.Shutdown(SocketShutdown.Both);
+                }
+                catch (SocketException)
+                {
+                }
+
+                server.Close();
+            }
+            else
+            {
+                foreach (Socket client in Clients)
+                {
+                    try
+                    {
+                        client.Shutdown(SocketShutdown.Both);
+                    }
+                    catch (SocketException)
+                    {
+                    }
+
+                    client.Close();
+                }
+            }
 
             foreach (Socket connection in Connections)
             {
                 connection.Dispose();
             }
             Connections.Clear();
-
-            Connector.Dispose();
         }
     }
 }

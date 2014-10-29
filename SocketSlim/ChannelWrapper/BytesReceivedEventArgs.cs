@@ -3,7 +3,7 @@ using System;
 namespace SocketSlim.ChannelWrapper
 {
     /// <summary>
-    /// Kind of the interface for the EventArgs object used for receiving bytes in <see cref="ChannelWrapperBase"/>.
+    /// Abstract class used as interface for the EventArgs object for receiving bytes in <see cref="ChannelWrapperBase"/>.
     /// </summary>
     public abstract class BytesReceivedEventArgs : EventArgs
     {

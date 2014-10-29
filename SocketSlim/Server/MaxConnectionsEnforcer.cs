@@ -1,22 +1,24 @@
 ﻿using System.Threading;
+using System.Threading.Tasks;
+using SocketSlim.Util;
 
 namespace SocketSlim.Server
 {
     public class MaxConnectionsEnforcer : IMaxConnectionsEnforcer
     {
-        private readonly Semaphore semaphore;
+        private readonly AsyncSemaphore semaphore;
 
         public MaxConnectionsEnforcer(int maxConnections)
         {
-            semaphore = new Semaphore(maxConnections, maxConnections);
+            semaphore = new AsyncSemaphore(maxConnections);
         }
 
         /// <summary>
         /// Blocks until the connection is available.
         /// </summary>
-        public void TakeOne()
+        public Task TakeOne()
         {
-            semaphore.WaitOne();
+            return semaphore.WaitAsync();
         }
 
         public void ReleaseOne()

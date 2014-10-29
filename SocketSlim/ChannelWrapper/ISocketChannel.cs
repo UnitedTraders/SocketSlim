@@ -3,6 +3,9 @@ using SocketSlim.Client;
 
 namespace SocketSlim.ChannelWrapper
 {
+    /// <summary>
+    /// Describes single opened duplex channel. Once it closes, it can't be reused.
+    /// </summary>
     public interface ISocketChannel
     {
         /// <summary>

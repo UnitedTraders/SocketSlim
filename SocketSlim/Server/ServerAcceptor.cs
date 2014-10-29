@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 using SocketSlim.Client;
 
 namespace SocketSlim.Server
@@ -16,6 +17,8 @@ namespace SocketSlim.Server
         private bool acceptStopped;
 
         private IMaxConnectionsEnforcer maxConnectionsEnforcer;
+        private int maxPendingConnections = 100;
+        private int maxSimultaneousConnections = -1;
 
         public ServerAcceptor(SocketType socketType, ProtocolType protocolType, ISocketAsyncEventArgsPool acceptorPool, Func<SocketAsyncEventArgs> acceptorFactory)
         {
@@ -31,9 +34,17 @@ namespace SocketSlim.Server
 
         public int ListenPort { get; set; }
 
-        public int MaxPendingConnections { get; set; }
+        public int MaxPendingConnections
+        {
+            get { return maxPendingConnections; }
+            set { maxPendingConnections = value; }
+        }
 
-        public int MaxSimultaneousConnections { get; set; }
+        public int MaxSimultaneousConnections
+        {
+            get { return maxSimultaneousConnections; }
+            set { maxSimultaneousConnections = value; }
+        }
 
         /// <summary>
         /// Call this method when the socket we've sent you through <see cref="Accepted"/> event got closed.
@@ -49,7 +60,7 @@ namespace SocketSlim.Server
             acceptStopped = false;
 
             // create connection count limiter
-            maxConnectionsEnforcer = MaxSimultaneousConnections < 0
+            maxConnectionsEnforcer = maxSimultaneousConnections < 0
                 ? (IMaxConnectionsEnforcer) new NoMaxConnectionEnforcer()
                 : new MaxConnectionsEnforcer(MaxSimultaneousConnections);
 
@@ -64,6 +75,25 @@ namespace SocketSlim.Server
 
             // start connection acceptin'
             StartAccept();
+        }
+
+        /// <summary>
+        /// Stops server socket from accepting new connections and frees the port it's listening on.
+        /// 
+        /// Does nothing to the client channels that are already opened.
+        /// </summary>
+        public virtual void Stop()
+        {
+            // signal that we're stopping
+            if (acceptStopped) // if someone already stopping the socket, then we're doing nothing
+            {
+                return;
+            }
+
+            acceptStopped = true;
+
+            // then close it
+            socket.Close();
         }
 
         private void StartAccept()
@@ -83,8 +113,19 @@ namespace SocketSlim.Server
             currentAcceptor.Completed += OnAcceptorCompleted;
 
             // don't start accepting new connection until the number of simultaneous connections falls below the set limit
-            maxConnectionsEnforcer.TakeOne();
+            Task slotAvailable = maxConnectionsEnforcer.TakeOne();  // asynchronous pattern allows us to free the thread from waiting for connection count to go down
+            if (slotAvailable == null || slotAvailable.IsCompleted) // and also to avoid blocking connection accepting logic which launches StartAccept before processing connected socket.
+            {
+                ContinueAccept(currentAcceptor);
+            }
+            else
+            {
+                slotAvailable.ContinueWith(t => ContinueAccept(currentAcceptor), TaskContinuationOptions.ExecuteSynchronously);
+            }
+        }
 
+        private void ContinueAccept(SocketAsyncEventArgs currentAcceptor)
+        {
             bool callbackPending;
             try
             {

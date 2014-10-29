@@ -6,10 +6,12 @@ using SocketSlim.Client;
 namespace SocketSlim.ChannelWrapper
 {
     /// <summary>
-    /// Channel that's bound to a single <see cref="Socket"/>.
+    /// Channel that's bound to a single open <see cref="Socket"/> used for data exchange.
     /// </summary>
     public class ImmutableChannel : ISocketChannel
     {
+        // todo: provide data about local/remote endpoints for the channel
+
         private readonly ChannelWrapperBase wrapper;
 
         public ImmutableChannel(Socket channelSocket, SocketAsyncEventArgs receiver, SocketAsyncEventArgs sender, DirectBytesReceivedEventArgs receiverArgs, MemoryStream senderWriter)
