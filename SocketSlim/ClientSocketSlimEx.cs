@@ -21,9 +21,9 @@ namespace SocketSlim
 
         protected override void OnChannelClosed(object o, EventArgs e)
         {
-            base.OnChannelClosed(o, e);
-
             channel = null;
+
+            base.OnChannelClosed(o, e);
         }
 
         public override void Stop()
@@ -58,7 +58,7 @@ namespace SocketSlim
             this.channel = channel;
         }
 
-        private void OnChannelBytesReceived(ImmutableChannel socket, byte[] message)
+        private void OnChannelBytesReceived(ISocketChannel socket, byte[] message)
         {
             RaiseBytesReceived(message);
         }

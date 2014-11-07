@@ -30,6 +30,8 @@ namespace SocketSlim.Util
             byte[] bytes = new byte[bufferBytesAllocatedForEachSocket];
 
             args.SetBuffer(bytes, 0, bytes.Length);
+
+            return true;
         }
 
         public void FreeBuffer(SocketAsyncEventArgs args)

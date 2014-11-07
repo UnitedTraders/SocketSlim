@@ -90,7 +90,7 @@ namespace SocketSlim.ChannelWrapper
             get { return additionalData; }
         }
 
-        public event ChannelMessageHandler<ImmutableChannel> BytesReceived;
+        public event ChannelMessageHandler<ISocketChannel> BytesReceived;
 
         protected void RaiseBytesReceived(byte[] message)
         {

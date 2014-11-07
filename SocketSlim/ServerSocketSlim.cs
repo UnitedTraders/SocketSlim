@@ -53,12 +53,29 @@ namespace SocketSlim
         /// <param name="acceptorPoolSize">size of the acceptor structures pool (expensive to allocate on the fly)</param>
         /// <param name="maxPendingConnections">sets the size of the listen socket OS backlog</param>
         public ServerSocketSlim(bool contiguous, int sendReceiveBufferSize, int maxSimultaneousConnections, int acceptorPoolSize = 100, int maxPendingConnections = 100)
+            : this(contiguous, sendReceiveBufferSize, maxSimultaneousConnections, maxSimultaneousConnections, acceptorPoolSize, maxPendingConnections)
+        { }
+
+        /// <summary>
+        /// Creates server socket with the upper limit on accepted connections and a contiguous buffer block for send/receive buffers, if specified.
+        /// 
+        /// All the send/receive buffers are allocated on creation of the server socket.
+        /// 
+        /// This constructor allows to preallocate a larger number of resources that there will be simultaneous connections available, because some of the resources could be unrecoverble/in a brief use and so the buffer is welcome.
+        /// </summary>
+        /// <param name="contiguous">if true, all the buffers for send and receive are allocated as one contiguous byte array. This prevents memory fragmentation as the socket receive buffers become unmovable on heap, once the socket is opened. You really want to set this to true, if you're using this constructor.</param>
+        /// <param name="sendReceiveBufferSize">size of the both send and receive buffers in bytes</param>
+        /// <param name="maxSimultaneousConnections">maximum number of accepted client connections at any point in time. The next connection is accepted when one of the previous ones is closed.</param>
+        /// <param name="preallocatedDataCount">number of instances of send/receive resources to preallocate on socket creation</param>
+        /// <param name="acceptorPoolSize">size of the acceptor structures pool (expensive to allocate on the fly)</param>
+        /// <param name="maxPendingConnections">sets the size of the listen socket OS backlog</param>
+        public ServerSocketSlim(bool contiguous, int sendReceiveBufferSize, int maxSimultaneousConnections, int preallocatedDataCount, int acceptorPoolSize = 100, int maxPendingConnections = 100)
             : this(
-                contiguous 
-                    ? new BigBufferManager { BufferBytesAllocatedForEachSocket = sendReceiveBufferSize, TotalBytesInBufferBlock = sendReceiveBufferSize * maxSimultaneousConnections * 2 }
+                contiguous
+                    ? new BigBufferManager { BufferBytesAllocatedForEachSocket = sendReceiveBufferSize, TotalBytesInBufferBlock = sendReceiveBufferSize * preallocatedDataCount * 2 }
                     : (IBufferManager) new SimpleBufferManager { BufferBytesAllocatedForEachSocket = sendReceiveBufferSize },
                 maxSimultaneousConnections,
-                maxSimultaneousConnections,
+                preallocatedDataCount,
                 acceptorPoolSize,
                 maxPendingConnections
             )

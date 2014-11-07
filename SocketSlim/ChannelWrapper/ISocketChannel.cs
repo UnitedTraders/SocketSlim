@@ -34,7 +34,7 @@ namespace SocketSlim.ChannelWrapper
         /// <summary>
         /// Raised when channel receives new data.
         /// </summary>
-        event ChannelMessageHandler<ImmutableChannel> BytesReceived;
+        event ChannelMessageHandler<ISocketChannel> BytesReceived;
 
         /// <summary>
         /// Raised when the channel is closed. Once the channel is closed,
