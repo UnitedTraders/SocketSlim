@@ -1,26 +1,10 @@
-﻿using System;
-
-namespace SocketSlim
+﻿namespace SocketSlim
 {
-    public class ChannelStateChangedEventArgs : EventArgs
+    public class ChannelStateChangedEventArgs : StateChangedEventArgs<ChannelState>
     {
-        private readonly ChannelState oldState;
-        private readonly ChannelState newState;
-
-        public ChannelStateChangedEventArgs(ChannelState oldState, ChannelState newState)
+        public ChannelStateChangedEventArgs(ChannelState oldState, ChannelState newState) 
+            : base(oldState, newState)
         {
-            this.oldState = oldState;
-            this.newState = newState;
-        }
-
-        public ChannelState NewState
-        {
-            get { return newState; }
-        }
-
-        public ChannelState OldState
-        {
-            get { return oldState; }
         }
     }
 }

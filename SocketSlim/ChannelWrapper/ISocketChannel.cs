@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net;
 using SocketSlim.Client;
 
 namespace SocketSlim.ChannelWrapper
@@ -12,6 +13,16 @@ namespace SocketSlim.ChannelWrapper
         /// Call this after you've subscribed to all event so that you don't miss first events.
         /// </summary>
         void Start();
+
+        /// <summary>
+        /// Gets the channel's remote endpoint.
+        /// </summary>
+        EndPoint RemoteEndPoint { get; }
+
+        /// <summary>
+        /// Gets the channel's local endpoint.
+        /// </summary>
+        EndPoint LocalEndPoint { get; }
 
         /// <summary>
         /// Sends specified <paramref name="bytes"/> cref="bytes"/> through socket.
@@ -44,5 +55,10 @@ namespace SocketSlim.ChannelWrapper
         /// Closes this channel.
         /// </summary>
         void Close();
+
+        /// <summary>
+        /// This property allows you to attach additional data to this channel.
+        /// </summary>
+        object Tag { get; set; }
     }
 }

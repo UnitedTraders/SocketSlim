@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Net;
 using System.Net.Sockets;
 using SocketSlim.Client;
 
@@ -13,13 +14,20 @@ namespace SocketSlim.ChannelWrapper
         // todo: provide data about local/remote endpoints for the channel
 
         private readonly ChannelWrapperBase wrapper;
+        private readonly Socket channelSocket;
+        
+        private readonly object additionalData;
 
-        public ImmutableChannel(Socket channelSocket, SocketAsyncEventArgs receiver, SocketAsyncEventArgs sender, DirectBytesReceivedEventArgs receiverArgs, MemoryStream senderWriter)
+        public ImmutableChannel(Socket channelSocket, SocketAsyncEventArgs receiver, SocketAsyncEventArgs sender, DirectBytesReceivedEventArgs receiverArgs, MemoryStream senderWriter, object additionalData = null)
         {
+            this.channelSocket = channelSocket;
+
             wrapper = new ChannelWrapperBase(channelSocket, receiver, receiverArgs, sender, senderWriter);
             wrapper.BytesReceived += OnBytesReceived;
             wrapper.Closed += OnChannelClosed;
             wrapper.DuplexChannelClosed += OnChannelError;
+
+            this.additionalData = additionalData;
         }
 
         /// <summary>
@@ -60,9 +68,26 @@ namespace SocketSlim.ChannelWrapper
             // when both are null, the socket is closed normally
         }
 
+        public EndPoint RemoteEndPoint
+        {
+            get { return channelSocket.RemoteEndPoint; }
+        }
+
+        public EndPoint LocalEndPoint
+        {
+            get { return channelSocket.LocalEndPoint; }
+        }
+
         public void Send(byte[] bytes)
         {
             wrapper.Send(bytes);
+        }
+
+        public object Tag { get; set; }
+
+        public object AdditionalData
+        {
+            get { return additionalData; }
         }
 
         public event ChannelMessageHandler<ImmutableChannel> BytesReceived;

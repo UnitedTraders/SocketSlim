@@ -34,6 +34,8 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="IServerSocketSlim.cs" />
+    <Compile Include="StateChangedEventArgs.cs" />
     <Compile Include="ChannelWrapper\BytesReceivedEventArgs.cs" />
     <Compile Include="ChannelWrapper\ChannelCloseEventArgs.cs" />
     <Compile Include="ChannelWrapper\ChannelEventArgs.cs" />
@@ -55,15 +57,22 @@
     <Compile Include="IClientSocketSlim.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ServerSocketSlim.cs" />
+    <Compile Include="ServerState.cs" />
+    <Compile Include="ServerStateChangedEventArgs.cs" />
     <Compile Include="Server\IMaxConnectionsEnforcer.cs" />
     <Compile Include="Server\ISocketAsyncEventArgsPool.cs" />
     <Compile Include="Server\MaxConnectionsEnforcer.cs" />
     <Compile Include="Server\NoMaxConnectionEnforcer.cs" />
+    <Compile Include="Server\ObjectPool.cs" />
     <Compile Include="Server\QueueSocketAsyncEventArgsPool.cs" />
     <Compile Include="Server\ServerAcceptor.cs" />
     <Compile Include="SocketErrorException.cs" />
     <Compile Include="ChannelMessageHandler.cs" />
     <Compile Include="Util\AsyncSemaphore.cs" />
+    <Compile Include="Util\BigBufferManager.cs" />
+    <Compile Include="Util\IBufferManager.cs" />
+    <Compile Include="Util\SimpleBufferManager.cs" />
+    <Compile Include="Util\SocketAsyncEventArgsUtil.cs" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

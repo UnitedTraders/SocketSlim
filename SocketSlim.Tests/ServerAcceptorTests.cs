@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Linq;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -117,7 +119,61 @@ namespace SocketSlim.Tests
                 StartClientConnect(i);
             }
 
-            // todo
+            byte[] testData = new byte[5000];
+            for (int i = 0; i < testData.Length; i++)
+            {
+                testData[i] = (byte) (i*i);
+            }
+
+            WaitForConnections(Clients.Length);
+            foreach (Socket connection in OpenedConnections)
+            {
+                connection.Send(testData);
+            }
+
+            WaitForData(testData.Length * Clients.Length);
+
+            foreach (Socket client in Clients)
+            {
+                VerifyOtherEndData(client, testData);
+            }
+        }
+
+        [Fact]
+        public void OpenedChannelsReceiveData()
+        {
+            Acceptor.Start();
+            for (int i = 0; i < Clients.Length; i++)
+            {
+                StartClientConnect(i);
+            }
+
+            byte[] testData = new byte[5000];
+            for (int i = 0; i < testData.Length; i++)
+            {
+                testData[i] = (byte)(i * i);
+            }
+
+            WaitForConnections(Clients.Length);
+            foreach (Socket client in Clients)
+            {
+                client.Send(testData);
+            }
+
+            foreach (Socket socket in OpenedConnections)
+            {
+                byte[] rcvData = new byte[6000];
+                int byteCount = 0;
+
+                while ((byteCount += socket.Receive(rcvData, byteCount, rcvData.Length - byteCount, SocketFlags.None)) < testData.Length)
+                {
+                    // receive in loop
+                }
+
+                Assert.Equal(testData.Length, byteCount);
+                Array.Resize(ref rcvData, byteCount);
+                Assert.True(testData.SequenceEqual(rcvData));
+            }
         }
     }
 }
