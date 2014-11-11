@@ -60,5 +60,10 @@ namespace SocketSlim.ChannelWrapper
         /// This property allows you to attach additional data to this channel.
         /// </summary>
         object Tag { get; set; }
+
+        /// <summary>
+        /// Gets additional settings and stats for the channel.
+        /// </summary>
+        IChannelSettingsAndStats SettingsAndStats { get; }
     }
 }

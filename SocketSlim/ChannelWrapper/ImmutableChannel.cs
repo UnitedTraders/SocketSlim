@@ -127,5 +127,10 @@ namespace SocketSlim.ChannelWrapper
         {
             wrapper.Close();
         }
+
+        public IChannelSettingsAndStats SettingsAndStats
+        {
+            get { return wrapper; }
+        }
     }
 }

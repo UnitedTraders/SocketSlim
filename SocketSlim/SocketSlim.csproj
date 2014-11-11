@@ -34,6 +34,9 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ChannelWrapper\IChannelSettingsAndStats.cs" />
+    <Compile Include="ChannelWrapper\OutgoingQueueOverflowBehavior.cs" />
+    <Compile Include="ChannelWrapper\OutgoingQueueOverflowException.cs" />
     <Compile Include="IServerSocketSlim.cs" />
     <Compile Include="StateChangedEventArgs.cs" />
     <Compile Include="ChannelWrapper\BytesReceivedEventArgs.cs" />

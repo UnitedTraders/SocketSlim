@@ -32,7 +32,7 @@ namespace SocketSlim.ChannelWrapper
     /// GC, allocating many small buffers creates memory fragmentation issue, so this object has to allow for different buffer
     /// allocation techniques such as sharing one huge byte array across many <see cref="SocketAsyncEventArgs"/>.
     /// </remarks>
-    public class ChannelWrapperBase
+    public class ChannelWrapperBase : IChannelSettingsAndStats
     {
         // as this object is tied exclusively to one socket, we can store send/receive context data in here instead of
         // passing it through SocketAsyncEventArgs
@@ -55,6 +55,15 @@ namespace SocketSlim.ChannelWrapper
         private int freeReceiveCounter;
 
         private bool closed;
+
+        // some diagnostics
+        private long currentOutgoingQueueSize;
+        private int peakOutgoingQueueLength;
+        private long sentByteCount;
+        private long receivedByteCount;
+
+        private OutgoingQueueOverflowBehavior outgoingQueueOverflowBehavior = OutgoingQueueOverflowBehavior.Ignore;
+        private int maxOutgoingQueueLength = Int32.MaxValue;
 
         /// <summary>
         /// Creates the non-reusable socket wrapper.
@@ -133,6 +142,8 @@ namespace SocketSlim.ChannelWrapper
                     return false;
                 }
 
+                receivedByteCount += receiver.BytesTransferred;
+
                 RaiseBytesReceived();
             }
             catch (Exception ex)
@@ -184,15 +195,55 @@ namespace SocketSlim.ChannelWrapper
             }
 
             bool needStart = false;
+            int queueLength;
             lock (outgoingQueue)
             {
+                // check queue size constraints
+                if (outgoingQueue.Count >= maxOutgoingQueueLength && outgoingQueueOverflowBehavior != OutgoingQueueOverflowBehavior.Ignore && maxOutgoingQueueLength > 0)
+                {
+                    switch (outgoingQueueOverflowBehavior)
+                    {
+                        case OutgoingQueueOverflowBehavior.DiscardSilently:
+                            return;
+
+                        case OutgoingQueueOverflowBehavior.DiscardException:
+                            throw new OutgoingQueueOverflowException(maxOutgoingQueueLength);
+
+                        case OutgoingQueueOverflowBehavior.RetireOldMessages:
+                            while (outgoingQueue.Count >= maxOutgoingQueueLength) // remove messages from queue's start until it could hold our message
+                            {
+                                byte[] message = outgoingQueue.Dequeue();
+                                currentOutgoingQueueSize -= message.Length;
+                            }
+                            break;
+
+                        case OutgoingQueueOverflowBehavior.ClearQueue:
+                            outgoingQueue.Clear();
+                            currentOutgoingQueueSize = 0;
+                            break;
+
+                        case OutgoingQueueOverflowBehavior.Close:
+                            Close();
+                            return;
+                    }
+                }
+
                 outgoingQueue.Enqueue(msg);
+                
+                // update diagnostics
+                currentOutgoingQueueSize += msg.Length;
+                queueLength = outgoingQueue.Count;
 
                 if (!sending) // check whether noone is sending data already, becuse then they'll pick up the message otherwise.
                 {
                     sending = true;
                     needStart = true;
                 }
+            }
+
+            if (peakOutgoingQueueLength < queueLength)
+            {
+                peakOutgoingQueueLength = queueLength;
             }
 
             if (needStart)
@@ -257,6 +308,8 @@ namespace SocketSlim.ChannelWrapper
                     {
                         byte[] message = outgoingQueue.Dequeue();
                         messages.Add(message);
+
+                        currentOutgoingQueueSize -= message.Length;
 
                         if (bytesToSend + message.Length > sendBufferWriter.Length)
                         {
@@ -329,6 +382,8 @@ namespace SocketSlim.ChannelWrapper
                     CloseSocket(isReceiver: false, error: sender.SocketError);
                     return;
                 }
+
+                sentByteCount += sender.BytesTransferred;
 
                 StartSend();
             }
@@ -454,6 +509,66 @@ namespace SocketSlim.ChannelWrapper
         {
             // close the socket itself, both receiver and sender will quickly return errors and free themselves shortly after that
             CloseInternal();
+        }
+
+        /// <summary>
+        /// Gets or sets the behavior for the channel when the size of outgoing queue in items exceeds <see cref="MaxOutgoingQueueLength"/>.
+        /// </summary>
+        public OutgoingQueueOverflowBehavior OutgoingQueueOverflowBehavior
+        {
+            get { return outgoingQueueOverflowBehavior; }
+            set { outgoingQueueOverflowBehavior = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets a length of ougoing queue to trigger <see cref="OutgoingQueueOverflowBehavior"/>. Must be greater than zero to take effect.
+        /// 
+        /// For the optimal performance, this should be set to <see cref="int.MaxValue"/> to save two comparison operations, if you want to turn off the check;
+        /// </summary>
+        public int MaxOutgoingQueueLength
+        {
+            get { return maxOutgoingQueueLength; }
+            set { maxOutgoingQueueLength = value; }
+        }
+
+        /// <summary>
+        /// Gets the immediate send queue item count.
+        /// </summary>
+        public int CurrentOutgoingQueueLength
+        {
+            get { return outgoingQueue.Count; }
+        }
+
+        /// <summary>
+        /// Gets the immediate send queue cumulative size in bytes.
+        /// </summary>
+        public long CurrentOutgoingQueueSize
+        {
+            get { return currentOutgoingQueueSize; }
+        }
+
+        /// <summary>
+        /// Gets the maximum send queue length in items throughout the life of a channel wrapper.
+        /// </summary>
+        public int PeakOutgoingQueueLength
+        {
+            get { return peakOutgoingQueueLength; }
+        }
+
+        /// <summary>
+        /// Gets the number of bytes that were sent through the socket.
+        /// </summary>
+        public long SentByteCount
+        {
+            get { return sentByteCount; }
+        }
+
+        /// <summary>
+        /// Gets the number of bytes that were sent through the socket.
+        /// </summary>
+        public long ReceivedByteCount
+        {
+            get { return receivedByteCount; }
         }
     }
 }
