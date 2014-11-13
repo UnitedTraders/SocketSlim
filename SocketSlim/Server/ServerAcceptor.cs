@@ -47,6 +47,11 @@ namespace SocketSlim.Server
         }
 
         /// <summary>
+        /// Gets or sets whether the socket should listen both on IPv6 and IPv4 when the listen address is an IPv6 address.
+        /// </summary>
+        public bool Ipv6Only { get; set; }
+
+        /// <summary>
         /// Call this method when the socket we've sent you through <see cref="Accepted"/> event got closed.
         /// </summary>
         public void ReleaseOpenConnectionSlot()
@@ -66,6 +71,7 @@ namespace SocketSlim.Server
 
             // create listen socket
             socket = new Socket(ListenAddress.AddressFamily, socketType, protocolType);
+            socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, Ipv6Only ? 1 : 0); 
 
             // bind it
             socket.Bind(new IPEndPoint(ListenAddress, ListenPort));

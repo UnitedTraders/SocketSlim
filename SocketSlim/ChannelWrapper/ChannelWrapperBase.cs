@@ -77,6 +77,9 @@ namespace SocketSlim.ChannelWrapper
         public ChannelWrapperBase(Socket socket, SocketAsyncEventArgs receiver, DirectBytesReceivedEventArgs receivedEventArgs, SocketAsyncEventArgs sender, MemoryStream sendBufferWriter)
         {
             this.socket = socket;
+
+            socket.NoDelay = true;
+            socket.Blocking = false;
             
             this.receiver = receiver;
             receiver.Completed += OnReceiveCompleted;

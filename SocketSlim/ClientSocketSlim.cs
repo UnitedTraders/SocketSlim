@@ -14,7 +14,7 @@ namespace SocketSlim
     /// </summary>
     public class ClientSocketSlim : IClientSocketSlim
     {
-        private const int DefaultBufferSize = 8192;
+        public const int DefaultBufferSize = 8192;
 
         private IPAddress[] ipAddresses;
         private string host;

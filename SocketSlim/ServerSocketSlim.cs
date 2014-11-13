@@ -156,6 +156,12 @@ namespace SocketSlim
             set { serverAcceptor.ListenPort = value; }
         }
 
+        public bool Ipv6Only
+        {
+            get { return serverAcceptor.Ipv6Only; }
+            set { serverAcceptor.Ipv6Only = value; }
+        }
+
         public void Start()
         {
             if (state != (int) ServerState.Stopped)
