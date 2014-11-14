@@ -152,14 +152,13 @@ namespace SocketSlim
         {
             if (state != (int) ChannelState.Disconnected)
             {
-                throw new InvalidOperationException("Can't open socket that's not diconnnected");
+                throw new InvalidOperationException("Can't open socket that's not diconnected");
             }
 
             ChangeState(ChannelState.Connecting);
 
             try
             {
-
                 ResolveHostName();
 
                 connector.Address = ipAddresses[0]; // todo: select random IP
