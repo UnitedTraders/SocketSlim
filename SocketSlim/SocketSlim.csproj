@@ -38,6 +38,8 @@
     <Compile Include="ChannelWrapper\OutgoingQueueOverflowBehavior.cs" />
     <Compile Include="ChannelWrapper\OutgoingQueueOverflowException.cs" />
     <Compile Include="IServerSocketSlim.cs" />
+    <Compile Include="ISocketSlim.cs" />
+    <Compile Include="SocketSlimBase.cs" />
     <Compile Include="StateChangedEventArgs.cs" />
     <Compile Include="ChannelWrapper\BytesReceivedEventArgs.cs" />
     <Compile Include="ChannelWrapper\ChannelCloseEventArgs.cs" />

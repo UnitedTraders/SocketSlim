@@ -12,7 +12,7 @@ namespace SocketSlim
     /// <summary>
     /// Socket which returns <see cref="ISocketChannel"/> on successful connection.
     /// </summary>
-    public class ClientSocketSlim : IClientSocketSlim
+    public class ClientSocketSlim : SocketSlimBase<ChannelState>, IClientSocketSlim
     {
         public const int DefaultBufferSize = 8192;
 
@@ -69,17 +69,11 @@ namespace SocketSlim
 
             ISocketChannel channel = new ImmutableChannel(e.Socket, receiver, sender, receiverArgs, senderWriter);
             channel.Closed += OnChannelClosed;
-            channel.Error += OnChannelError;
 
             RaiseConnected(channel);
             ChangeState(ChannelState.Connected);
 
             channel.Start();
-        }
-
-        private void OnChannelError(object o, ExceptionEventArgs e)
-        {
-            RaiseError(e);
         }
 
         protected virtual void OnChannelClosed(object o, EventArgs e)
@@ -173,6 +167,11 @@ namespace SocketSlim
 
         public virtual void Stop()
         {
+            if (State == ChannelState.Disconnected)
+            {
+                return;
+            }
+
             ChangeState(ChannelState.Disconnecting);
 
             if (!connector.StopConnecting())
@@ -191,39 +190,6 @@ namespace SocketSlim
             }
 
             RaiseStateChanged(new ChannelStateChangedEventArgs(oldState, newState));
-        }
-
-        public event EventHandler<ChannelStateChangedEventArgs> StateChanged;
-
-        private void RaiseStateChanged(ChannelStateChangedEventArgs e)
-        {
-            EventHandler<ChannelStateChangedEventArgs> handler = StateChanged;
-            if (handler != null)
-            {
-                handler(this, e);
-            }
-        }
-
-        public event EventHandler<ExceptionEventArgs> Error;
-
-        protected void RaiseError(ExceptionEventArgs e)
-        {
-            EventHandler<ExceptionEventArgs> handler = Error;
-            if (handler != null)
-            {
-                handler(this, e);
-            }
-        }
-
-        public event EventHandler<ChannelEventArgs> Connected;
-
-        protected virtual void RaiseConnected(ISocketChannel channel)
-        {
-            EventHandler<ChannelEventArgs> handler = Connected;
-            if (handler != null)
-            {
-                handler(this, new ChannelEventArgs(channel));
-            }
         }
     }
 }

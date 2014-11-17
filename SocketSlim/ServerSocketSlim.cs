@@ -11,7 +11,7 @@ using SocketSlim.Util;
 
 namespace SocketSlim
 {
-    public class ServerSocketSlim : IServerSocketSlim
+    public class ServerSocketSlim : SocketSlimBase<ServerState>, IServerSocketSlim
     {
         private readonly ServerAcceptor serverAcceptor;
         
@@ -185,6 +185,11 @@ namespace SocketSlim
 
         public virtual void Stop()
         {
+            if (State == ServerState.Stopped)
+            {
+                return;
+            }
+
             ChangeState(ServerState.Stopping);
 
             try
@@ -267,39 +272,6 @@ namespace SocketSlim
         private static SocketAsyncEventArgs CreateAcceptor()
         {
             return new SocketAsyncEventArgs();
-        }
-
-        public event EventHandler<ServerStateChangedEventArgs> StateChanged;
-
-        private void RaiseStateChanged(ServerStateChangedEventArgs e)
-        {
-            EventHandler<ServerStateChangedEventArgs> handler = StateChanged;
-            if (handler != null)
-            {
-                handler(this, e);
-            }
-        }
-        
-        public event EventHandler<ExceptionEventArgs> Error;
-
-        protected void RaiseError(ExceptionEventArgs e)
-        {
-            EventHandler<ExceptionEventArgs> handler = Error;
-            if (handler != null)
-            {
-                handler(this, e);
-            }
-        }
-
-        public event EventHandler<ChannelEventArgs> Connected;
-
-        protected virtual void RaiseConnected(ISocketChannel channel)
-        {
-            EventHandler<ChannelEventArgs> handler = Connected;
-            if (handler != null)
-            {
-                handler(this, new ChannelEventArgs(channel));
-            }
         }
 
         private class PreallocatedChannelData

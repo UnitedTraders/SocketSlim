@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net.Sockets;
 using SocketSlim.ChannelWrapper;
+using SocketSlim.Client;
 
 namespace SocketSlim
 {
@@ -54,8 +55,14 @@ namespace SocketSlim
             base.RaiseConnected(channel);
 
             channel.BytesReceived += OnChannelBytesReceived;
+            channel.Error += OnChannelError;
 
             this.channel = channel;
+        }
+
+        private void OnChannelError(object o, ExceptionEventArgs e)
+        {
+            RaiseError(e);
         }
 
         private void OnChannelBytesReceived(ISocketChannel socket, byte[] message)
