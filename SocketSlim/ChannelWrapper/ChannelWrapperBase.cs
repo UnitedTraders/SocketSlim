@@ -108,6 +108,12 @@ namespace SocketSlim.ChannelWrapper
             {
                 callbackPending = socket.ReceiveAsync(receiver);
             }
+            catch (ObjectDisposedException)
+            {
+                // socket is closed
+                CloseSocketNormally(isReceiver: true);
+                return false;
+            }
             catch (Exception ex)
             {
                 CloseSocket(isReceiver: true, exception: ex);
