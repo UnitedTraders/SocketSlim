@@ -71,7 +71,11 @@ namespace SocketSlim.Server
 
             // create listen socket
             socket = new Socket(ListenAddress.AddressFamily, socketType, protocolType);
-            socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, Ipv6Only ? 1 : 0); 
+            
+            if (ListenAddress.AddressFamily == AddressFamily.InterNetworkV6)
+            {
+                socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, Ipv6Only ? 1 : 0); 
+            } 
 
             // bind it
             socket.Bind(new IPEndPoint(ListenAddress, ListenPort));
