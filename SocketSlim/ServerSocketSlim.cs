@@ -180,6 +180,7 @@ namespace SocketSlim
             catch
             {
                 ChangeState(ServerState.Stopped);
+                throw;
             }
         }
 
