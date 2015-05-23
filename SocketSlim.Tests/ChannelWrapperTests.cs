@@ -267,7 +267,11 @@ namespace SocketSlim.Tests
             Assert.True(closedEvent.Wait(TimeSpan.FromSeconds(2)));
 
             Assert.Equal(1, closeErrorData.Count);
+			#if __MonoCS__
+			Assert.Null(closeErrorData[DuplexSide.Receive].SocketError);
+			#else
             Assert.Equal(SocketError.ConnectionReset, closeErrorData[DuplexSide.Receive].SocketError);
+			#endif
         }
 
         [Fact]
