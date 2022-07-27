@@ -266,7 +266,7 @@ namespace SocketSlim.Tests
 
             Assert.True(closedEvent.Wait(TimeSpan.FromSeconds(2)));
 
-            Assert.Equal(1, closeErrorData.Count);
+            Assert.Single(closeErrorData);
 			#if __MonoCS__
 			Assert.Null(closeErrorData[DuplexSide.Receive].SocketError);
 			#else
@@ -281,7 +281,7 @@ namespace SocketSlim.Tests
 
             Assert.True(closedEvent.Wait(TimeSpan.FromSeconds(2)));
 
-            Assert.Equal(1, closeErrorData.Count);
+            Assert.Single(closeErrorData);
             
             Assert.True(SocketError.OperationAborted == closeErrorData[DuplexSide.Receive].SocketError ||
                         null == closeErrorData[DuplexSide.Receive].SocketError && null == closeErrorData[DuplexSide.Receive].Exception);

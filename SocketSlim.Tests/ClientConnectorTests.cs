@@ -28,7 +28,7 @@ namespace SocketSlim.Tests
 
             WaitForConnections(1);
 
-            Assert.Equal(1, OpenedConnections.Count);
+            Assert.Single(OpenedConnections);
             Assert.True(OpenedConnections[0].Connected);
             
             WaitForServerConnections(1);
@@ -67,7 +67,7 @@ namespace SocketSlim.Tests
 
             WaitForErrors(1);
 
-            Assert.Equal(1, ConnectionErrors.Count);
+            Assert.Single(ConnectionErrors);
             SocketErrorException ex = (SocketErrorException) ConnectionErrors[0];
             Assert.Equal(SocketError.OperationAborted, ex.SocketError);
             
@@ -77,13 +77,14 @@ namespace SocketSlim.Tests
         [Fact]
         public void ReportsUnavailability()
         {
+            Connector.Address = Addr;
             Connector.Port = Port + 1;
 
             Connector.Connect();
 
             WaitForErrors(1);
 
-            Assert.Equal(1, ConnectionErrors.Count);
+            Assert.Single(ConnectionErrors);
             SocketErrorException ex = (SocketErrorException)ConnectionErrors[0];
             Assert.Equal(SocketError.ConnectionRefused, ex.SocketError);
 

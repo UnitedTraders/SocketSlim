@@ -12,7 +12,7 @@ namespace SocketSlim.Tests
 {
     public abstract class TestsBase : IDisposable
     {
-        private static readonly TimeSpan WaitTime = TimeSpan.FromSeconds(2);
+        private static readonly TimeSpan WaitTime = TimeSpan.FromSeconds(5);
 
         protected static readonly IPAddress Addr = IPAddress.Parse("127.0.0.1");
         protected static readonly int Port = 32098;

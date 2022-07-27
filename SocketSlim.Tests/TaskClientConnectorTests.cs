@@ -33,7 +33,7 @@ namespace SocketSlim.Tests
 
             Assert.NotNull(task.Result);
 
-            Assert.Equal(1, OpenedConnections.Count);
+            Assert.Single(OpenedConnections);
             Assert.True(OpenedConnections[0].Connected);
 
             WaitForServerConnections(1);
@@ -56,7 +56,7 @@ namespace SocketSlim.Tests
 
             WaitForErrors(1);
 
-            Assert.Equal(1, ConnectionErrors.Count);
+            Assert.Single(ConnectionErrors);
             SocketErrorException ex2 = (SocketErrorException)ConnectionErrors[0];
             Assert.Equal(SocketError.OperationAborted, ex2.SocketError);
 
@@ -70,12 +70,12 @@ namespace SocketSlim.Tests
 
             Task<Socket> task = connector.ConnectAsync();
 
-            AggregateException ex = Assert.Throws<AggregateException>(() => task.Wait(TimeSpan.FromSeconds(2)));
+            AggregateException ex = Assert.Throws<AggregateException>(() => task.Wait(TimeSpan.FromSeconds(5)));
             Assert.IsType<SocketErrorException>(ex.InnerException);
 
             WaitForErrors(1);
 
-            Assert.Equal(1, ConnectionErrors.Count);
+            Assert.Single(ConnectionErrors);
             SocketErrorException ex2 = (SocketErrorException)ConnectionErrors[0];
             Assert.Equal(SocketError.ConnectionRefused, ex2.SocketError);
 
