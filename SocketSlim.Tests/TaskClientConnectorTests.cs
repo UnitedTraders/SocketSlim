@@ -19,7 +19,7 @@ namespace SocketSlim.Tests
                        })
         { }
 
-        public TaskClientConnectorTests(TaskClientConnector connector) : base(connector)
+        internal TaskClientConnectorTests(TaskClientConnector connector) : base(connector)
         {
             this.connector = connector;
         }

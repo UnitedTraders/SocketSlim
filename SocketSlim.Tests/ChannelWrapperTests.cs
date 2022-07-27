@@ -39,7 +39,7 @@ namespace SocketSlim.Tests
                        })
         { }
 
-        public ChannelWrapperTests(TaskClientConnector connector) : base(connector)
+        internal ChannelWrapperTests(TaskClientConnector connector) : base(connector)
         {
             // init various things
             receiver = new SocketAsyncEventArgs();

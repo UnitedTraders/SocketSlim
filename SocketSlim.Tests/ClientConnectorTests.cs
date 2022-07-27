@@ -11,7 +11,7 @@ namespace SocketSlim.Tests
         public ClientConnectorTests() : this(null)
         { }
 
-        public ClientConnectorTests(ClientConnector connector)
+        internal ClientConnectorTests(ClientConnector connector)
             : base(connector)
         { }
 
